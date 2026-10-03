@@ -19,8 +19,13 @@ public class TicketEvaluationEntity {
     private String ticketId;
 
     private String conversationId;
+
+    @Column(columnDefinition = "TEXT")
     private String issueDescription;
+
+    @Column(columnDefinition = "TEXT")
     private String proposedDecision;
+
     private String priority;
 
     @Column(columnDefinition = "TEXT")
@@ -32,10 +37,12 @@ public class TicketEvaluationEntity {
     @Enumerated(EnumType.STRING)
     private TicketStatus status;
 
-    private String humanReviewerNotes;
+    @Column(columnDefinition = "TEXT")
     private String finalDecision;
+
+    @Column(columnDefinition = "TEXT")
+    private String humanReviewerNotes;
+
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;
-
-    // Getters, Setters, Constructors...
 }

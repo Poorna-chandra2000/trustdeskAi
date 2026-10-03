@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustDesk AI - Operations & Customer Ticket Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 700: '#075985' }
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+<!-- TOP HEADER NAV -->
+<header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="bg-sky-500 p-2.5 rounded-xl text-white shadow-lg shadow-sky-500/30">
+                <i class="fa-solid fa-shield-halved text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-white leading-none">TrustDesk AI</h1>
+                <p class="text-xs text-slate-400 mt-1">Order Intelligence & Agentic HITL Workbench</p>
+            </div>
+        </div>
+
+        <!-- Quick Action Controls -->
+        <div class="flex items-center space-x-2">
+            <button onclick="runSeedIngestion()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow-lg shadow-sky-600/20 flex items-center gap-1.5">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Seed 10 Orders & Tickets
+            </button>
+            <button onclick="openScriptModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-terminal text-emerald-400"></i> View seed_data.sh
+            </button>
+            <div class="h-6 w-px bg-slate-700 mx-1"></div>
+            <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-full border border-slate-700 text-xs">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-slate-300 font-mono" id="orderCountBadge">Orders: 0</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- MAIN CONTENT CONTAINER -->
+<main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- HITL ALERT BANNER -->
+    <div id="hitlAlertBanner" class="hidden bg-amber-500/10 border-2 border-amber-500/50 rounded-xl p-4 flex items-center justify-between shadow-xl shadow-amber-500/10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-500/20 text-amber-400 p-3 rounded-lg border border-amber-500/30">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-amber-400">Human Intervention Required</h3>
+                <p class="text-xs text-amber-200/80">High-value damage, missing shipment claims, or policy exceptions waiting for approval.</p>
+            </div>
+        </div>
+        <button onclick="scrollToHITL()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-lg transition shadow">
+            Review Queue <i class="fa-solid fa-arrow-down ml-1"></i>
+        </button>
+    </div>
+
+    <!-- MAIN GRID LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: CUSTOMER PORTAL & AUTO-APPROVED SHOWCASE -->
+        <div class="lg:col-span-5 space-y-6">
+
+            <!-- CUSTOMER TICKET SUBMISSION PORTAL -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-user-pen text-sky-400 text-lg"></i>
+                        <h2 class="font-bold text-base text-white">Raise Support Ticket</h2>
+                    </div>
+                    <button onclick="fillSampleTicket('TCK-3002')" class="text-[11px] bg-slate-700 hover:bg-slate-600 text-sky-400 px-2.5 py-1 rounded-md border border-slate-600 transition">
+                        <i class="fa-solid fa-bolt mr-1"></i> Fill High-Prio Demo
+                    </button>
+                </div>
+
+                <form id="customerTicketForm" onsubmit="submitCustomerTicket(event)" class="space-y-3.5">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Order ID</label>
+                            <input type="text" id="custOrderId" value="ORD-3001" placeholder="e.g. ORD-3001" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Customer ID</label>
+                            <input type="text" id="custCustomerId" value="CUST-101" placeholder="e.g. CUST-101" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Ticket ID</label>
+                            <input type="text" id="custTicketId" value="TCK-CUSTOM-01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Conversation ID</label>
+                            <input type="text" id="custConvId" value="conv-user-101" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Issue Description</label>
+                        <textarea id="custIssueDesc" rows="3" required placeholder="Describe what went wrong with your order..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-sky-500">I bought a 4K Ultra HD Pro Webcam under order ORD-3001 delivered 3 days ago. It does not fit my setup and I want to return it for a full refund.</textarea>
+                    </div>
+
+                    <button type="submit" id="custSubmitBtn" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs py-2.5 rounded-lg transition shadow-lg shadow-sky-600/30 flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> Evaluate Ticket via AI
+                    </button>
+                </form>
+            </div>
+
+            <!-- AGENT AUTO-APPROVED SHOWCASE -->
+            <div class="bg-slate-800 border border-emerald-500/30 rounded-xl p-5 shadow-xl space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-emerald-500/20 text-emerald-400 p-1.5 rounded border border-emerald-500/30">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <h2 class="font-bold text-sm text-white">Agent Auto-Approved Showcase</h2>
+                    </div>
+                    <span id="autoApprovedBadge" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold px-2 py-0.5 rounded">0 Resolved</span>
+                </div>
+
+                <p class="text-[11px] text-slate-400">Tickets automatically processed and approved by AI without human intervention:</p>
+
+                <div id="autoApprovedList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                    <div class="text-center py-6 text-slate-500 text-xs">
+                        <i class="fa-solid fa-circle-notch animate-spin mb-1 text-slate-600"></i>
+                        <p>No auto-approved tickets yet. Run seed script or submit a low-risk ticket.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SYSTEM CONSOLE LOG -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl">
+                <h2 class="font-bold text-[11px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-terminal text-sky-400"></i> Pipeline Audit Log
+                </h2>
+                <div id="systemLog" class="bg-slate-950 rounded-lg p-3 text-[11px] font-mono text-slate-400 space-y-1 max-h-36 overflow-y-auto border border-slate-800">
+                    <div><span class="text-slate-600">[SYSTEM]</span> Command Center initialized. Ready for ingestion.</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: HITL QUEUE & INGESTED ORDERS DIRECTORY -->
+        <div class="lg:col-span-7 space-y-6">
+
+            <!-- PENDING HITL APPROVAL WORKBENCH -->
+            <div id="hitlQueueSection" class="bg-slate-800 border-2 border-amber-500/40 rounded-xl p-5 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-amber-500/20 text-amber-400 p-2 rounded-lg border border-amber-500/30">
+                            <i class="fa-solid fa-user-shield text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-base text-white">Pending HITL Approval Queue</h2>
+                            <p class="text-xs text-slate-400">Requires manual human sign-off due to policy rules or high risk</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="hitlCountBadge" class="bg-slate-700 text-slate-300 text-xs font-bold px-2.5 py-1 rounded-full border border-slate-600">0 Pending</span>
+                        <button onclick="fetchPendingApprovals()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 p-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pending Ticket Cards List -->
+                <div id="pendingCardsList" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    <div class="text-center py-8 text-slate-500 text-xs">
+                        <i class="fa-solid fa-circle-check text-2xl mb-2 text-emerald-500/40"></i>
+                        <p>No tickets currently waiting in human approval queue.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INGESTED ORDERS DIRECTORY -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-xl space-y-4">
+                <div class="flex flex-wrap justify-between items-center gap-2 pb-3 border-b border-slate-700">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-boxes-stacked text-sky-400 text-lg"></i>
+                        <h2 class="font-bold text-base text-white">Ingested Orders Directory</h2>
+                    </div>
+                    <button onclick="fetchAllOrders()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh Directory
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div class="flex gap-2">
+                        <input type="text" id="lookupOrderId" placeholder="Search Order ID (e.g. ORD-3002)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        <button onclick="lookupOrderById()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Search</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="lookupCustomerId" placeholder="Search Customer ID (e.g. CUST-102)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        <button onclick="lookupOrderByCustomer()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Search</button>
+                    </div>
+                </div>
+
+                <!-- Order Cards Grid -->
+                <div id="orderCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                    <div class="col-span-full text-center py-8 text-slate-500 text-xs">
+                        <i class="fa-solid fa-spinner animate-spin text-xl mb-2 text-slate-600"></i>
+                        <p>Loading ingested orders...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</main>
+
+<!-- SCRIPT PREVIEW MODAL -->
+<div id="scriptModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-terminal text-emerald-400"></i>
+                <h3 class="font-bold text-sm text-white">seed_data.sh (Order & Ticket Ingestion)</h3>
+            </div>
+            <button onclick="closeScriptModal()" class="text-slate-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="p-4 flex-1 overflow-y-auto font-mono text-xs bg-slate-950 text-slate-300">
+            <pre id="scriptCodeBlock" class="whitespace-pre-wrap leading-relaxed"></pre>
+        </div>
+
+        <div class="px-5 py-3 border-t border-slate-800 flex justify-end space-x-2">
+            <button onclick="copyScriptText()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3.5 py-2 rounded-lg border border-slate-700 transition">
+                <i class="fa-solid fa-copy mr-1"></i> Copy Code
+            </button>
+            <button onclick="downloadScriptFile()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3.5 py-2 rounded-lg font-semibold transition shadow">
+                <i class="fa-solid fa-download mr-1"></i> Download seed_data.sh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JAVASCRIPT APP LOGIC -->
+<script>
+    const API_BASE = '/api/v1';
+    let autoApprovedTicketsList = [];
+
+    // System Logging Helper
+    function log(msg, type = 'INFO') {
+      const logDiv = document.getElementById('systemLog');
+      const time = new Date().toLocaleTimeString();
+      const color = type === 'ERROR' ? 'text-rose-400' : type === 'SUCCESS' ? 'text-emerald-400' : type === 'WARN' ? 'text-amber-400' : 'text-slate-400';
+      logDiv.innerHTML += `<div><span class="text-slate-600">[${time}]</span> <span class="${color}">[${type}] ${msg}</span></div>`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // Render Order Cards matching OrderEntity structure
+    function renderOrderCards(orders) {
+      const container = document.getElementById('orderCardsGrid');
+      const orderList = Array.isArray(orders) ? orders : (orders ? [orders] : []);
+
+      if (orderList.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-8 text-slate-500 text-xs">
+            <i class="fa-solid fa-box-open text-2xl mb-2 text-slate-600"></i>
+            <p>No orders found matching criteria.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orderList.map(order => {
+        let itemsHtml = '';
+        try {
+          const items = typeof order.itemsJson === 'string' ? JSON.parse(order.itemsJson) : (order.itemsJson || []);
+          itemsHtml = items.map(item => `
+            <div class="flex justify-between items-center text-[11px] bg-slate-950 px-2 py-1 rounded border border-slate-800">
+              <span class="text-slate-300 font-medium truncate">${item.name || item.sku}</span>
+              <span class="text-sky-400 font-mono font-bold ml-2">x${item.qty || item.quantity || 1}</span>
+            </div>
+          `).join('');
+        } catch (e) {
+          itemsHtml = `<span class="text-[11px] text-slate-500 font-mono truncate">${order.itemsJson || 'No items listed'}</span>`;
+        }
+
+        const purchaseFormatted = order.purchaseDate ? new Date(order.purchaseDate).toLocaleDateString() : 'N/A';
+        const deliveryFormatted = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'N/A';
+
+        return `
+          <div class="bg-slate-900 border border-slate-700/80 hover:border-sky-500/50 rounded-xl p-3.5 shadow flex flex-col justify-between space-y-2.5 transition">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="bg-sky-500/10 text-sky-400 border border-sky-500/30 text-xs font-mono font-bold px-2 py-0.5 rounded">
+                  ${order.orderId}
+                </span>
+                <span class="text-[10px] font-mono text-slate-400">${order.customerId || ''}</span>
+              </div>
+              <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                ${order.orderStatus || 'DELIVERED'}
+              </span>
+            </div>
+
+            <div class="border-b border-slate-800 pb-2 space-y-1">
+              <div class="flex justify-between items-baseline">
+                <span class="text-xs text-slate-200 font-medium truncate">${order.customerEmail || 'N/A'}</span>
+                <span class="text-xs font-bold text-emerald-400 font-mono">$${Number(order.totalAmount || 0).toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>Purchased: ${purchaseFormatted}</span>
+                <span>Delivered: ${deliveryFormatted}</span>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Purchased Items</p>
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // API: Fetch All Orders
+    async function fetchAllOrders() {
+      try {
+        const res = await fetch(`${API_BASE}/orders`);
+        const data = await res.json();
+        renderOrderCards(data);
+        document.getElementById('orderCountBadge').textContent = `Orders: ${Array.isArray(data) ? data.length : 0}`;
+      } catch (err) {
+        log(`Failed to fetch orders: ${err.message}`, 'WARN');
+      }
+    }
+
+    async function lookupOrderById() {
+      const id = document.getElementById('lookupOrderId').value.trim();
+      if (!id) return fetchAllOrders();
+      try {
+        const res = await fetch(`${API_BASE}/orders/${id}`);
+        const data = res.ok ? await res.json() : null;
+        renderOrderCards(data);
+      } catch (err) { renderOrderCards([]); }
+    }
+
+    async function lookupOrderByCustomer() {
+      const custId = document.getElementById('lookupCustomerId').value.trim();
+      if (!custId) return fetchAllOrders();
+      try {
+        const res = await fetch(`${API_BASE}/orders/customer/${custId}`);
+        const data = await res.json();
+        renderOrderCards(data);
+      } catch (err) { renderOrderCards([]); }
+    }
+
+    // Submit Ticket Evaluation
+    async function submitCustomerTicket(e) {
+      if (e) e.preventDefault();
+
+      const orderId = document.getElementById('custOrderId').value.trim();
+      const customerId = document.getElementById('custCustomerId').value.trim();
+      const ticketId = document.getElementById('custTicketId').value.trim();
+      const conversationId = document.getElementById('custConvId').value.trim();
+      const issueDescription = document.getElementById('custIssueDesc').value.trim();
+
+      const btn = document.getElementById('custSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> AI Evaluating Request...`;
+
+      log(`Evaluating Ticket ${ticketId} against ${orderId}...`, 'INFO');
+
+      try {
+        const res = await fetch(`${API_BASE}/agent/evaluate-ticket`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Conversation-Id': conversationId },
+          body: JSON.stringify({ conversationId, ticketId, orderId, customerId, issueDescription })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data.requiresHumanApproval) {
+          log(`Ticket ${ticketId} FLAGGED for Human Approval.`, 'WARN');
+        } else {
+          log(`Ticket ${ticketId} AUTO-APPROVED by Agent!`, 'SUCCESS');
+          addAutoApprovedTicket(data);
+        }
+
+        fetchPendingApprovals();
+
+      } catch (err) {
+        log(`Ticket evaluation failed: ${err.message}`, 'ERROR');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Evaluate Ticket via AI`;
+      }
+    }
+
+    // Auto-Approved List Handlers
+    function addAutoApprovedTicket(ticketData) {
+      const existingIdx = autoApprovedTicketsList.findIndex(t => t.ticketId === ticketData.ticketId);
+      if (existingIdx >= 0) autoApprovedTicketsList[existingIdx] = ticketData;
+      else autoApprovedTicketsList.unshift(ticketData);
+      renderAutoApprovedTickets();
+    }
+
+    function renderAutoApprovedTickets() {
+      const container = document.getElementById('autoApprovedList');
+      const badge = document.getElementById('autoApprovedBadge');
+      badge.textContent = `${autoApprovedTicketsList.length} Resolved`;
+
+      if (autoApprovedTicketsList.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-slate-500 text-xs">
+            <i class="fa-solid fa-robot text-xl mb-1 text-slate-600"></i>
+            <p>No auto-approved tickets yet. Run seed script or submit a low-risk ticket.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = autoApprovedTicketsList.map(t => `
+        <div class="bg-slate-900 border border-emerald-500/40 rounded-lg p-3 space-y-1.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-mono font-bold text-emerald-400">${t.ticketId || 'TCK-AUTO'}</span>
+              <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">Auto-Approved</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">${t.priority || 'LOW'} PRIORITY</span>
+          </div>
+          <p class="text-xs text-slate-200 font-medium">${t.decision || t.proposedDecision || 'Request Approved'}</p>
+          <p class="text-[11px] text-slate-400 leading-snug">${t.reasoning || 'Complies with standard automated policy rules.'}</p>
+          <div class="text-[10px] text-sky-400 font-mono">Policy Ref: ${t.citedPolicyDoc || 'Standard Policy'}</div>
+        </div>
+      `).join('');
+    }
+
+    // Fetch HITL Queue
+    async function fetchPendingApprovals() {
+      try {
+        const res = await fetch(`${API_BASE}/agent/pending-approvals`);
+        const pendingList = await res.json();
+
+        const banner = document.getElementById('hitlAlertBanner');
+        const badge = document.getElementById('hitlCountBadge');
+        const container = document.getElementById('pendingCardsList');
+
+        badge.textContent = `${pendingList.length} Pending`;
+
+        if (pendingList.length > 0) {
+          banner.classList.remove('hidden');
+          badge.className = 'bg-amber-500 text-slate-950 text-xs font-extrabold px-2.5 py-1 rounded-full shadow-lg animate-bounce';
+
+          container.innerHTML = pendingList.map(ticket => {
+            const isHighPrio = (ticket.priority || '').toUpperCase().includes('HIGH');
+            const prioBadgeClass = isHighPrio ? 'bg-rose-500 text-white animate-pulse' : 'bg-amber-500 text-slate-950';
+
+            return `
+              <div class="bg-slate-900 border-2 ${isHighPrio ? 'border-rose-500/80' : 'border-amber-500/60'} rounded-xl p-4 shadow-xl space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs font-mono font-bold text-sky-400">${ticket.ticketId}</span>
+                    <span class="text-slate-600">•</span>
+                    <span class="text-xs font-mono text-slate-400">${ticket.conversationId || 'N/A'}</span>
+                  </div>
+                  <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${prioBadgeClass}">
+                    ${ticket.priority || 'NORMAL'} PRIORITY
+                  </span>
+                </div>
+
+                <div>
+                  <h4 class="text-[10px] font-bold text-slate-500 uppercase">Customer Issue</h4>
+                  <p class="text-xs text-slate-200 mt-0.5">${ticket.issueDescription || ''}</p>
+                </div>
+
+                <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 space-y-1">
+                  <h4 class="text-xs font-bold text-amber-400 flex items-center gap-1">
+                    <i class="fa-solid fa-brain"></i> Agent Proposed Decision: ${ticket.proposedDecision || ticket.decision || 'Review Required'}
+                  </h4>
+                  <p class="text-xs text-amber-200/80">${ticket.reasoning || ''}</p>
+                  <div class="text-[10px] font-mono text-sky-400">Cited Policy: ${ticket.citedPolicyDoc || 'N/A'}</div>
+                </div>
+
+                <!-- Review Action Inputs -->
+                <div class="pt-2 space-y-2 border-t border-slate-800">
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="override-${ticket.ticketId}" placeholder="Override decision (optional)" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                    <input type="text" id="notes-${ticket.ticketId}" placeholder="Reviewer notes..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button onclick="submitReview('${ticket.ticketId}', true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1.5 rounded-lg transition shadow flex justify-center items-center gap-1">
+                      <i class="fa-solid fa-check"></i> Approve Request
+                    </button>
+                    <button onclick="submitReview('${ticket.ticketId}', false)" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-1.5 rounded-lg transition shadow flex justify-center items-center gap-1">
+                      <i class="fa-solid fa-xmark"></i> Reject Request
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+        } else {
+          banner.classList.add('hidden');
+          badge.className = 'bg-slate-700 text-slate-300 text-xs font-bold px-2.5 py-1 rounded-full border border-slate-600';
+          container.innerHTML = `
+            <div class="text-center py-8 text-slate-500 text-xs">
+              <i class="fa-solid fa-circle-check text-2xl mb-2 text-emerald-500/50"></i>
+              <p>Queue empty! All tickets reviewed.</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        log(`Failed to fetch pending approvals: ${err.message}`, 'WARN');
+      }
+    }
+
+    // Submit HITL Decision Review
+    async function submitReview(ticketId, approved) {
+      const overrideDecision = document.getElementById(`override-${ticketId}`)?.value.trim() || null;
+      const reviewerNotes = document.getElementById(`notes-${ticketId}`)?.value.trim() || null;
+
+      log(`Submitting review for ${ticketId} (${approved ? 'APPROVED' : 'REJECTED'})...`, 'INFO');
+
+      try {
+        const res = await fetch(`${API_BASE}/agent/tickets/${ticketId}/human-review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approved, overrideDecision, reviewerNotes })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const updated = await res.json();
+
+        log(`Ticket ${ticketId} human review recorded!`, 'SUCCESS');
+        fetchPendingApprovals();
+
+      } catch (err) {
+        log(`Review submission failed: ${err.message}`, 'ERROR');
+      }
+    }
+
+    // Simulator: Seed 10 Orders & Evaluate 10 Tickets
+    async function runSeedIngestion() {
+      log('Starting automated bulk ingestion simulator...', 'INFO');
+      try {
+        // 1. Bulk Ingest Orders
+        const bulkOrders = [
+          { orderId: "ORD-3001", customerId: "CUST-101", customerEmail: "alex.johnson@example.com", purchaseDate: "2026-03-20T10:30:00", deliveryDate: "2026-03-23T14:15:00", orderStatus: "DELIVERED", totalAmount: 199.99, itemsJson: '[{"sku":"CAM-4K","name":"4K Ultra HD Pro Webcam","qty":1,"price":199.99}]' },
+          { orderId: "ORD-3002", customerId: "CUST-102", customerEmail: "sara.connor@example.com", purchaseDate: "2026-03-25T09:00:00", deliveryDate: "2026-03-28T11:45:00", orderStatus: "DELIVERED", totalAmount: 1899.00, itemsJson: '[{"sku":"LAP-900","name":"Pro Gaming Laptop RTX4080","qty":1,"price":1899.00}]' },
+          { orderId: "ORD-3003", customerId: "CUST-103", customerEmail: "michael.scott@example.com", purchaseDate: "2026-03-26T16:20:00", deliveryDate: "2026-03-29T10:10:00", orderStatus: "DELIVERED", totalAmount: 149.50, itemsJson: '[{"sku":"EAR-NC","name":"Noise Cancelling Wireless Earbuds","qty":1,"price":149.50}]' },
+          { orderId: "ORD-3004", customerId: "CUST-104", customerEmail: "ellen.ripley@example.com", purchaseDate: "2026-01-10T08:15:00", deliveryDate: "2026-01-14T13:00:00", orderStatus: "DELIVERED", totalAmount: 299.00, itemsJson: '[{"sku":"WTH-PRO","name":"Smart Fitness Watch Series 5","qty":1,"price":299.00}]' },
+          { orderId: "ORD-3005", customerId: "CUST-105", customerEmail: "bruce.wayne@example.com", purchaseDate: "2026-03-27T18:00:00", deliveryDate: "2026-03-30T15:30:00", orderStatus: "DELIVERED", totalAmount: 129.99, itemsJson: '[{"sku":"KBD-MECH","name":"RGB Mechanical Gaming Keyboard","qty":1,"price":129.99}]' },
+          { orderId: "ORD-3006", customerId: "CUST-106", customerEmail: "diana.prince@example.com", purchaseDate: "2026-03-28T11:10:00", deliveryDate: "2026-03-31T09:20:00", orderStatus: "DELIVERED", totalAmount: 1499.00, itemsJson: '[{"sku":"DRN-4K","name":"4K Aerial Cine Drone Bundle","qty":1,"price":1499.00}]' },
+          { orderId: "ORD-3007", customerId: "CUST-107", customerEmail: "pete.mitchell@example.com", purchaseDate: "2026-03-22T14:45:00", deliveryDate: "2026-03-25T16:00:00", orderStatus: "DELIVERED", totalAmount: 89.95, itemsJson: '[{"sku":"HUB-USB","name":"7-in-1 USB-C Thunderbolt Hub","qty":1,"price":89.95}]' },
+          { orderId: "ORD-3008", customerId: "CUST-108", customerEmail: "tony.stark@example.com", purchaseDate: "2026-03-29T08:00:00", deliveryDate: "2026-04-01T12:00:00", orderStatus: "DELIVERED", totalAmount: 3499.00, itemsJson: '[{"sku":"MON-OLED","name":"49 Ultra-Wide Curved OLED Monitor","qty":1,"price":3499.00}]' },
+          { orderId: "ORD-3009", customerId: "CUST-109", customerEmail: "natasha.r@example.com", purchaseDate: "2026-03-24T13:30:00", deliveryDate: "2026-03-27T10:45:00", orderStatus: "DELIVERED", totalAmount: 79.00, itemsJson: '[{"sku":"CHG-MAG","name":"3-in-1 Magnetic Fast Charger","qty":1,"price":79.00}]' },
+          { orderId: "ORD-3010", customerId: "CUST-110", customerEmail: "clark.kent@example.com", purchaseDate: "2026-02-01T10:00:00", deliveryDate: "2026-02-05T14:00:00", orderStatus: "DELIVERED", totalAmount: 450.00, itemsJson: '[{"sku":"AUD-DAC","name":"High-Res Desktop DAC Audio Amplifier","qty":1,"price":450.00}]' }
+        ];
+
+        await fetch(`${API_BASE}/orders/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bulkOrders)
+        });
+        log('Successfully bulk ingested 10 Order Entities!', 'SUCCESS');
+
+        // 2. Ingest Policies
+        await fetch(`${API_BASE}/agent/ingest-policies`, { method: 'POST' });
+        log('Policy vector store updated.', 'SUCCESS');
+
+        // Refresh UI
+        fetchAllOrders();
+        fetchPendingApprovals();
+
+      } catch (err) {
+        log(`Bulk ingestion error: ${err.message}`, 'ERROR');
+      }
+    }
+
+    function fillSampleTicket(type) {
+      if (type === 'TCK-3002') {
+        document.getElementById('custOrderId').value = 'ORD-3002';
+        document.getElementById('custCustomerId').value = 'CUST-102';
+        document.getElementById('custTicketId').value = 'TCK-3002';
+        document.getElementById('custConvId').value = 'conv-cust-102';
+        document.getElementById('custIssueDesc').value = 'HIGH PRIORITY: My Pro Gaming Laptop ($1,899.00) under order ORD-3002 arrived today with a shattered screen. I need an immediate full refund or priority replacement.';
+      }
+    }
+
+    function scrollToHITL() {
+      document.getElementById('hitlQueueSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Modal Helpers for seed_data.sh
+    const SCRIPT_TEXT = `#!/usr/bin/env bash
+BASE_URL="http://localhost:8080/api/v1"
+
+echo "🚀 Starting Data Ingestion..."
+curl -s -X POST "\${BASE_URL}/orders/bulk" -H "Content-Type: application/json" -d '[
+  {"orderId":"ORD-3001","customerId":"CUST-101","customerEmail":"alex.johnson@example.com","purchaseDate":"2026-03-20T10:30:00","deliveryDate":"2026-03-23T14:15:00","orderStatus":"DELIVERED","totalAmount":199.99,"itemsJson":"[{\\"sku\\":\\"CAM-4K\\",\\"name\\":\\"4K Ultra HD Pro Webcam\\",\\"qty\\":1,\\"price\\":199.99}]"},
+  {"orderId":"ORD-3002","customerId":"CUST-102","customerEmail":"sara.connor@example.com","purchaseDate":"2026-03-25T09:00:00","deliveryDate":"2026-03-28T11:45:00","orderStatus":"DELIVERED","totalAmount":1899.00,"itemsJson":"[{\\"sku\\":\\"LAP-900\\",\\"name\\":\\"Pro Gaming Laptop RTX4080\\",\\"qty\\":1,\\"price\\":1899.00}]"}
+]'
+echo "\n✅ Orders Ingested."
+
+curl -s -X POST "\${BASE_URL}/agent/ingest-policies"
+echo "\n✅ Policies Vectorized."`;
+
+    function openScriptModal() {
+      document.getElementById('scriptCodeBlock').textContent = SCRIPT_TEXT;
+      document.getElementById('scriptModal').classList.remove('hidden');
+    }
+
+    function closeScriptModal() {
+      document.getElementById('scriptModal').classList.add('hidden');
+    }
+
+    function copyScriptText() {
+      navigator.clipboard.writeText(SCRIPT_TEXT);
+      log('seed_data.sh copied to clipboard!', 'SUCCESS');
+    }
+
+    function downloadScriptFile() {
+      const blob = new Blob([SCRIPT_TEXT], { type: 'text/x-sh' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'seed_data.sh';
+      a.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchAllOrders();
+      fetchPendingApprovals();
+      renderAutoApprovedTickets();
+    });
+</script>
+</body>
+</html>
