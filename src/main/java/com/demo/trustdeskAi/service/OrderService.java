@@ -2,8 +2,8 @@ package com.demo.trustdeskAi.service;
 
 import com.demo.trustdeskAi.enitities.OrderEntity;
 import com.demo.trustdeskAi.repositories.OrderRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.core.type.TypeReference;
+//import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -94,5 +94,15 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderEntity> getOrdersByCustomer(String customerId) {
         return orderRepository.findByCustomerId(customerId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderEntity> getAllOrders() {
+        return orderRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public long getOrderCount() {
+        return orderRepository.count();
     }
 }

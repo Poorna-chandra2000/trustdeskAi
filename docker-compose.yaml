@@ -19,5 +19,19 @@ services:
       timeout: 5s
       retries: 5
 
+  trustdesk-app:
+    image: your-dockerhub-username/trustdesk-ai:latest # REPLACE THIS with your actual image name
+    container_name: trustdesk-ai-app
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/trustdesk
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=poorna
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
